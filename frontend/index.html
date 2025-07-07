@@ -1,154 +1,87 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload de Fotos com GridFS</title>
+  <title>Upload de Fotos</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    h1 {
-      color: #333;
-    }
-    #upload-form {
-      margin-bottom: 30px;
-      padding: 20px;
-      border: 1px dashed #ccc;
-      border-radius: 5px;
-      background: #f9f9f9;
-    }
-    #file-input {
-      margin: 10px 0;
-    }
-    #gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-    }
-    .photo-card {
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      overflow: hidden;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .photo-card img {
-      width: 100%;
-      height: 180px;
-      object-fit: cover;
-    }
-    .photo-info {
-      padding: 10px;
-      background: #fff;
-    }
-    .loading {
-      text-align: center;
-      font-style: italic;
-      color: #666;
-    }
-    button {
-      background: #4CAF50;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a049;
-    }
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    #galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
+    .foto { border: 1px solid #ddd; padding: 10px; border-radius: 5px; }
+    .foto img { width: 100%; height: 150px; object-fit: cover; }
+    #formUpload { margin: 30px 0; padding: 20px; background: #f5f5f5; border-radius: 5px; }
   </style>
 </head>
 <body>
-  <h1>Upload de Fotos (GridFS)</h1>
+  <h1>Upload de Fotos</h1>
   
-  <!-- Formulário de Upload -->
-  <form id="upload-form">
-    <h2>Enviar Nova Foto</h2>
-    <input type="file" id="file-input" accept="image/*" required>
-    <button type="submit">Enviar</button>
-  </form>
+  <div id="formUpload">
+    <input type="file" id="inputArquivo" accept="image/*">
+    <button onclick="enviarFoto()">Enviar Foto</button>
+  </div>
 
-  <!-- Galeria de Fotos -->
-  <h2>Galeria</h2>
-  <div id="gallery">
-    <p class="loading">Carregando fotos...</p>
+  <div id="galeria">
+    <!-- Fotos serão carregadas aqui -->
   </div>
 
   <script>
-    // Elementos do DOM
-    const uploadForm = document.getElementById('upload-form');
-    const fileInput = document.getElementById('file-input');
-    const gallery = document.getElementById('gallery');
-
+    // ATENÇÃO: Substitua pela URL do seu backend no Render
+    const API_URL = "https://fotos-do-projeto.onrender.com";
+    
     // Carrega as fotos ao iniciar
-    document.addEventListener('DOMContentLoaded', loadPhotos);
+    document.addEventListener('DOMContentLoaded', carregarFotos);
 
-    // Envio do formulário
-    uploadForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const file = fileInput.files[0];
-      
-      if (!file) {
-        alert('Selecione um arquivo!');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('arquivo', file);
-
+    async function carregarFotos() {
       try {
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          alert('Upload realizado com sucesso!');
-          fileInput.value = ''; // Limpa o input
-          loadPhotos(); // Atualiza a galeria
-        } else {
-          throw new Error('Erro no upload');
-        }
-      } catch (err) {
-        console.error(err);
-        alert('Falha no upload. Veja o console.');
-      }
-    });
-
-    // Carrega as fotos do backend
-    async function loadPhotos() {
-      gallery.innerHTML = '<p class="loading">Carregando fotos...</p>';
-      
-      try {
-        const response = await fetch('/api/fotos');
-        const photos = await response.json();
-
-        if (photos.length === 0) {
-          gallery.innerHTML = '<p>Nenhuma foto encontrada.</p>';
+        const response = await fetch(`${API_URL}/api/fotos`);
+        const dados = await response.json();
+        
+        const galeria = document.getElementById('galeria');
+        galeria.innerHTML = '';
+        
+        if (dados.length === 0) {
+          galeria.innerHTML = '<p>Nenhuma foto encontrada.</p>';
           return;
         }
 
-        gallery.innerHTML = '';
-        photos.forEach(photo => {
-          const photoCard = document.createElement('div');
-          photoCard.className = 'photo-card';
-          photoCard.innerHTML = `
-            <img src="/api/image/${photo.caminho}" alt="${photo.nome}">
-            <div class="photo-info">
-              <p><strong>${photo.nome}</strong></p>
-              <small>Enviado em: ${new Date(photo.dataUpload).toLocaleString()}</small>
-            </div>
+        dados.forEach(item => {
+          const divFoto = document.createElement('div');
+          divFoto.className = 'foto';
+          divFoto.innerHTML = `
+            <img src="${API_URL}/${item.caminho}" alt="${item.nome}">
+            <p>${item.nome}</p>
           `;
-          gallery.appendChild(photoCard);
+          galeria.appendChild(divFoto);
         });
-      } catch (err) {
-        gallery.innerHTML = '<p>Erro ao carregar fotos.</p>';
-        console.error(err);
+
+      } catch (erro) {
+        console.error('Erro ao carregar fotos:', erro);
+      }
+    }
+
+    async function enviarFoto() {
+      const input = document.getElementById('inputArquivo');
+      if (!input.files[0]) return alert('Selecione uma foto!');
+
+      const formData = new FormData();
+      formData.append('arquivo', input.files[0]);
+
+      try {
+        const response = await fetch(`${API_URL}/api/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          alert('Foto enviada com sucesso!');
+          input.value = '';
+          carregarFotos();
+        } else {
+          throw new Error('Erro no servidor');
+        }
+      } catch (erro) {
+        console.error('Erro ao enviar foto:', erro);
+        alert('Falha ao enviar foto');
       }
     }
   </script>
