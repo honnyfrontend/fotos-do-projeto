@@ -10,10 +10,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Cria a pasta uploads se não existir
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log('Pasta uploads criada com sucesso');
+}
+
 // Configuração do Multer
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');
+        cb(null, uploadsDir);
     },
     filename: (req, file, cb) => {
         cb(null, Date.now() + '-' + file.originalname);
@@ -37,12 +44,7 @@ const Foto = mongoose.model('Foto', {
 
 
 
-// Cria a pasta uploads se não existir
-const uploadsDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-    console.log('Pasta uploads criada com sucesso');
-}
+
 
 // Rotas
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
