@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Upload de Fotos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        #preview {
+            max-width: 100%;
+            margin-top: 20px;
+        }
+
+        .foto {
+            margin: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Upload de Fotos</h1>
+    <input type="file" id="fotoInput" accept="image/*">
+    <button onclick="enviarFoto()">Enviar Foto</button>
+    <img id="preview" style="display: none;">
+
+    <h2>Fotos Cadastradas</h2>
+    <div id="galeria"></div>
+
+    <script>
+        // URL da imagem (ajuste para sua API no Render se necessário)
+        const imagemURL = `http://localhost:3000/${foto.caminho}`;
+
+        // Exemplo: Adicionar a imagem ao HTML
+        const galeria = document.getElementById('galeria');
+        galeria.innerHTML = `
+        <div class="foto">
+        <img src="${imagemURL}" alt="${foto.nome}" width="200">
+        <p>${foto.nome}</p>
+        </div>
+        `;
+        const API_URL = "http://localhost:3000"; // Altere para sua URL do Render no deploy
+
+        // Mostrar preview da foto selecionada
+        document.getElementById('fotoInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const preview = document.getElementById('preview');
+                preview.src = URL.createObjectURL(file);
+                preview.style.display = 'block';
+            }
+        });
+
+        // Enviar foto para o backend
+        async function enviarFoto() {
+            const fileInput = document.getElementById('fotoInput');
+            if (!fileInput.files[0]) return alert('Selecione uma foto!');
+
+            const formData = new FormData();
+            formData.append('foto', fileInput.files[0]);
+
+            try {
+                const res = await fetch(`${API_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                alert('Foto enviada com sucesso!');
+                carregarFotos();
+            } catch (err) {
+                alert('Erro ao enviar foto.');
+            }
+        }
+
+        // Carregar fotos do backend
+        async function carregarFotos() {
+            const galeria = document.getElementById('galeria');
+            galeria.innerHTML = 'Carregando...';
+
+            const res = await fetch(`${API_URL}/fotos`);
+            const fotos = await res.json();
+
+            galeria.innerHTML = fotos.map(foto => `
+        <div class="foto">
+          <img src="${API_URL}/${foto.caminho}" width="200">
+          <p>${foto.nome}</p>
+        </div>
+      `).join('');
+        }
+
+        // Inicializar
+        carregarFotos();
+
+        
+    </script>
+</body>
+
+</html>
