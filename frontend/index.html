@@ -34,7 +34,7 @@
 
     <script>
         // URL da imagem (ajuste para sua API no Render se necessário)
-        const imagemURL = `https://fotos-do-projeto.onrender.com/${foto.caminho}`;
+        const imagemURL = "https://fotos-do-projeto.onrender.com";
 
         // Exemplo: Adicionar a imagem ao HTML
         const galeria = document.getElementById('galeria');
@@ -44,7 +44,7 @@
         <p>${foto.nome}</p>
         </div>
         `;
-        const API_URL = "https://fotos-do-projeto.onrender.com/"; // Altere para sua URL do Render no deploy
+        const API_URL = "https://fotos-do-projeto.onrender.com"; // Altere para sua URL do Render no deploy
 
         // Mostrar preview da foto selecionada
         document.getElementById('fotoInput').addEventListener('change', (e) => {
