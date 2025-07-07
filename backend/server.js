@@ -4,42 +4,61 @@ const mongoose = require('mongoose');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
-const Foto = require('./models/Foto');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Configuração do Multer (salvar fotos na pasta 'uploads')
+// Configuração do Multer
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
 });
+
 const upload = multer({ storage });
 
-// Conexão com MongoDB Atlas
+// Conexão com MongoDB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('Conectado ao MongoDB Atlas'))
-  .catch(err => console.error('Erro ao conectar:', err));
+  .then(() => console.log('Conectado ao MongoDB'))
+  .catch(err => console.error('Erro de conexão:', err));
 
-// No seu server.js, na rota /upload
-app.post('/upload', upload.single('foto'), async (req, res) => {
-  const caminhoWeb = req.file.path.replace(/\\/g, '/'); // Substitui \ por /
-  const novaFoto = new Foto({
-    nome: req.file.filename,
-    caminho: caminhoWeb // Ex: "uploads/1751911315050-img3.png"
-  });
-  await novaFoto.save();
-  res.status(201).json(novaFoto);
+// Modelo
+const Foto = mongoose.model('Foto', {
+  nome: String,
+  caminho: String,
+  dataUpload: { type: Date, default: Date.now }
 });
 
-// Rota para listar fotos
-app.get('/fotos', async (req, res) => {
-  const fotos = await Foto.find();
-  res.json(fotos);
+// Rotas
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.post('/api/upload', upload.single('arquivo'), async (req, res) => {
+  try {
+    const novaFoto = new Foto({
+      nome: req.file.originalname,
+      caminho: req.file.path.replace(/\\/g, '/')
+    });
+    await novaFoto.save();
+    res.status(201).json(novaFoto);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro no servidor' });
+  }
 });
 
-app.listen(process.env.PORT, () => {
-  console.log(`Servidor rodando na porta ${process.env.PORT}`);
+app.get('/api/fotos', async (req, res) => {
+  try {
+    const fotos = await Foto.find().sort({ dataUpload: -1 });
+    res.json(fotos);
+  } catch (err) {
+    res.status(500).json({ erro: 'Erro ao buscar fotos' });
+  }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Servidor rodando na porta ${PORT}`);
 });
